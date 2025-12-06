@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mikko Llaneta | Digital Performance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Chart Container Styling - MANDATORY for responsiveness */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%; /* Adapts to grid column */
+            height: 300px;
+            max-height: 350px;
+            margin: auto;
+        }
+
+        /* Custom Scrollbar for sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .nav-item.active {
+            background-color: #f0fdf4; /* emerald-50 */
+            color: #047857; /* emerald-700 */
+            border-right: 3px solid #047857;
+        }
+    </style>
+    <!-- Chosen Palette: Emerald (Growth/Money) & Slate (Professional/Data) -->
+    <!-- Application Structure Plan: 
+         Designed as a "Marketing Analytics Dashboard" to mirror the candidate's profession. 
+         1. Sidebar Navigation: Mimics SaaS tools (Google Analytics), allowing quick access to sections.
+         2. KPI Header: Instant view of high-level stats (Experience, Budget, Accounts) extracted from the resume.
+         3. "Performance Impact" Section: The core interactive element. Uses Chart.js to visualize the quantitative achievements (ROAS, CPA, Leads) found in the resume, allowing users to "filter" by job role. This proves the "Results-Driven" claim.
+         4. "Tech Stack" Section: Visualizes skills distribution, moving away from a static list to a functional breakdown of expertise.
+         5. "Career Timeline": A detailed, text-rich section for deep reading of the work history, accessible but secondary to the visual data.
+    -->
+    <!-- Visualization & Content Choices:
+         1. KPI Cards -> Inform -> Big bold numbers -> CSS Grid/Flex -> Immediate impact of scale (1.5M budget, 15 clients).
+         2. Impact Chart -> Compare/Change -> Bar Chart (Chart.js) -> Toggle between roles -> Shows specific % improvements (45% Leads, 25% CPA drop) per role. Justification: Shows cause-and-effect of his work.
+         3. Skill Distribution -> Relationships -> Doughnut Chart (Chart.js) -> Hover interaction -> Visualizes the balance between "Ad Platforms", "Analytics", and "Strategy".
+         4. Timeline -> Inform -> Styled HTML List -> Scroll interaction -> readable history.
+         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-white p-4 border-b border-slate-200 flex justify-between items-center z-10">
+        <h1 class="font-bold text-emerald-700 text-lg">Mikko Llaneta</h1>
+        <button id="mobile-menu-btn" class="text-slate-600 focus:outline-none">
+            &#9776; <!-- Hamburger Icon -->
+        </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="bg-white w-full md:w-64 border-r border-slate-200 flex-col justify-between hidden md:flex absolute md:relative z-20 h-full shadow-lg md:shadow-none transition-transform transform -translate-x-full md:translate-x-0">
+        <div>
+            <div class="p-6 border-b border-slate-100">
+                <img src="https://lh3.googleusercontent.com/a/ACg8ocIEB4Uixd4uAZMX9YZgTwzOkG8aq5e3LeMIgmAm1Mq6sUNMRHIT=s288-c-no" 
+                     alt="Mikko Llaneta Profile Picture" 
+                     class="w-12 h-12 rounded-full object-cover mb-3 ring-2 ring-emerald-400">
+                <h2 class="font-bold text-lg text-slate-800">Mikko Llaneta</h2>
+                <p class="text-xs text-slate-500 uppercase tracking-wider mt-1">Digital Marketing Mgr</p>
+            </div>
+            <nav class="mt-6 flex flex-col gap-1">
+                <button onclick="navigate('dashboard')" class="nav-item active text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    📊 Dashboard Overview
+                </button>
+                <button onclick="navigate('experience')" class="nav-item text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    🚀 Campaign Impact
+                </button>
+                <button onclick="navigate('skills')" class="nav-item text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    🛠 Tech Stack
+                </button>
+                <button onclick="navigate('history')" class="nav-item text-left px-6 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    📅 Career Timeline
+                </button>
+            </nav>
+        </div>
+        <div class="p-6 border-t border-slate-100 bg-slate-50">
+            <p class="text-xs font-semibold text-slate-400 mb-2">CONTACT</p>
+            <p class="text-xs text-slate-600 mb-1">📞 09989294172</p>
+            <p class="text-xs text-slate-600 mb-1">📧 mikkollaneta1995@...</p>
+            <p class="text-xs text-slate-600">📍 Tanza, Cavite</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto relative p-4 md:p-8 scroll-smooth" id="main-content">
+        
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="content-section space-y-6">
+            <header class="mb-8">
+                <h1 class="text-3xl font-bold text-slate-800">Executive Summary</h1>
+                <p class="text-slate-500 mt-2 max-w-3xl">
+                    Welcome to my interactive portfolio. This dashboard synthesizes my 5+ years of experience in performance marketing, highlighting my ability to manage significant budgets (₱1.5M+), lead teams, and drive double-digit growth in leads and efficiency for global clients.
+                </p>
+            </header>
+
+            <!-- KPI Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                    <p class="text-sm text-slate-500 font-medium">Experience</p>
+                    <p class="text-3xl font-bold text-emerald-600 mt-1">5+ Years</p>
+                    <p class="text-xs text-emerald-700 bg-emerald-50 inline-block px-2 py-1 rounded mt-2">Specialized in Google/Meta</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                    <p class="text-sm text-slate-500 font-medium">Monthly Budget Managed</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1">₱1.5M+</p>
+                    <p class="text-xs text-slate-400 mt-2">Across Google & Social</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                    <p class="text-sm text-slate-500 font-medium">Client Accounts</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1">15+</p>
+                    <p class="text-xs text-slate-400 mt-2">Diverse Verticals</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                    <p class="text-sm text-slate-500 font-medium">Key Lead Growth</p>
+                    <p class="text-3xl font-bold text-emerald-600 mt-1">45%</p>
+                    <p class="text-xs text-slate-400 mt-2">Top Performed Campaign</p>
+                </div>
+            </div>
+
+            <!-- Quick Chart Preview -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-700">Performance Metrics Overview</h3>
+                        <button onclick="navigate('experience')" class="text-xs text-emerald-600 font-medium hover:underline">View Details &rarr;</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="overviewChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-emerald-900 text-white p-6 rounded-xl shadow-sm flex flex-col justify-center">
+                    <h3 class="font-bold text-lg mb-4">Core Competencies</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3">
+                            <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                            <span class="text-emerald-100 text-sm">Full-Cycle Campaign Mgmt</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                            <span class="text-emerald-100 text-sm">GTM & GA4 Implementation</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                            <span class="text-emerald-100 text-sm">Budget Optimization</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                            <span class="text-emerald-100 text-sm">Team Leadership & Training</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                            <span class="text-emerald-100 text-sm">CRO & A/B Testing</span>
+                        </li>
+                    </ul>
+                    <div class="mt-8 pt-6 border-t border-emerald-800">
+                        <p class="text-xs text-emerald-300 uppercase">Latest Role</p>
+                        <p class="font-bold text-lg">Digital Marketing Manager</p>
+                        <p class="text-sm text-emerald-200">AMPH Advertising Agency</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPERIENCE VIEW -->
+        <div id="view-experience" class="content-section hidden space-y-6">
+            <header class="mb-6">
+                <h1 class="text-2xl font-bold text-slate-800">Campaign Impact Analysis</h1>
+                <p class="text-slate-500 mt-2">
+                    Interact with the controls below to visualize the quantitative impact I delivered across different roles. This section breaks down the specific metrics—Lead Growth, Efficiency, and CPA Reduction—cited in my resume.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Controls -->
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <h3 class="font-semibold text-slate-700 mb-3">Select Role to Analyze</h3>
+                        <div class="space-y-2">
+                            <button onclick="updateExperienceChart('manager')" class="role-btn w-full text-left px-4 py-3 rounded-lg text-sm transition-all bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium relative">
+                                Digital Marketing Manager
+                                <span class="block text-xs text-emerald-600 font-normal mt-1">2023 - Present • 15 Clients</span>
+                            </button>
+                            <button onclick="updateExperienceChart('consultant')" class="role-btn w-full text-left px-4 py-3 rounded-lg text-sm transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 relative">
+                                Marketing Consultant
+                                <span class="block text-xs text-slate-400 font-normal mt-1">2022 - Present • 7 Clients</span>
+                            </button>
+                            <button onclick="updateExperienceChart('analyst')" class="role-btn w-full text-left px-4 py-3 rounded-lg text-sm transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 relative">
+                                Sr. Performance Analyst
+                                <span class="block text-xs text-slate-400 font-normal mt-1">2019 - 2022 • Call Analysis</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="role-details" class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+                        <h4 class="font-bold text-slate-800 mb-2" id="detail-title">Key Achievement</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed" id="detail-text">
+                            Spearheaded campaign optimization efforts driving a <span class="font-bold text-emerald-600">45% increase</span> in qualified leads and <span class="font-bold text-emerald-600">30% efficiency</span> improvement.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                    <h3 class="font-bold text-slate-700 mb-4 text-center">Quantified Results Breakdown</h3>
+                    <div class="chart-container">
+                        <canvas id="experienceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SKILLS VIEW -->
+        <div id="view-skills" class="content-section hidden space-y-6">
+            <header class="mb-6">
+                <h1 class="text-2xl font-bold text-slate-800">Technical & Strategic Stack</h1>
+                <p class="text-slate-500 mt-2">
+                    My expertise spans three core pillars: Ad Platforms, Data Analytics, and Management Strategy. Explore the breakdown below.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-700 mb-4 text-center">Expertise Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="skillsChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-slate-400 mt-4">Visual representation of daily focus and proficiency</p>
+                </div>
+
+                <!-- Detailed List -->
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-blue-500">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <span class="text-xl mr-2">🎯</span> Ad Platforms
+                        </h3>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">Google Search</span>
+                            <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">Google Display</span>
+                            <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">Video / YT</span>
+                            <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">PMAX</span>
+                            <span class="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full font-medium">Meta / FB Ads</span>
+                            <span class="px-3 py-1 bg-pink-50 text-pink-700 text-xs rounded-full font-medium">TikTok Ads</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <span class="text-xl mr-2">📊</span> Analytics & Tracking
+                        </h3>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-medium">Google Tag Manager</span>
+                            <span class="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-medium">GA4</span>
+                            <span class="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-medium">Conversion Tracking</span>
+                            <span class="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-medium">Search Console</span>
+                            <span class="px-3 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-medium">Merchant Center</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-purple-500">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <span class="text-xl mr-2">🧠</span> Strategy & Mgmt
+                        </h3>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">Performance Budgeting</span>
+                            <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">Team Leadership</span>
+                            <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">CRO</span>
+                            <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">A/B Testing</span>
+                            <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">SEO Basics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY VIEW -->
+        <div id="view-history" class="content-section hidden max-w-4xl mx-auto">
+            <header class="mb-8">
+                <h1 class="text-2xl font-bold text-slate-800">Professional Timeline</h1>
+                <p class="text-slate-500 mt-2">
+                    A chronological view of my career progression, highlighting increasing responsibility from data analysis to strategic management.
+                </p>
+            </header>
+
+            <div class="relative border-l-2 border-emerald-200 ml-3 space-y-12 pb-10">
+                
+                <!-- Item 1 -->
+                <div class="relative pl-8">
+                    <span class="absolute -left-2 top-0 bg-emerald-500 w-4 h-4 rounded-full border-2 border-white shadow"></span>
+                    <h3 class="text-lg font-bold text-slate-800">Digital Marketing Manager</h3>
+                    <p class="text-emerald-600 font-medium text-sm mb-2">AMPH Advertising Agency | Jan 2023 - Present</p>
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-600 space-y-2">
+                        <p>• Lead and oversee complete digital strategy for <strong>15 client accounts</strong>.</p>
+                        <p>• Managed monthly budgets totaling over <strong>₱1,500,000</strong>.</p>
+                        <p>• Trained and mentored 4 new team members.</p>
+                        <p>• Achieved 45% increase in leads and 30% efficiency improvement.</p>
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="relative pl-8">
+                    <span class="absolute -left-2 top-0 bg-white border-2 border-emerald-400 w-4 h-4 rounded-full shadow"></span>
+                    <h3 class="text-lg font-bold text-slate-800">Digital Marketing Consultant</h3>
+                    <p class="text-emerald-600 font-medium text-sm mb-2">IT Outsourcing Singapore | Feb 2023 - Present</p>
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-600 space-y-2">
+                        <p>• Executed end-to-end digital ad creation for 7 international clients.</p>
+                        <p>• Manual GTM integration and GA4 connections for precise micro-conversion tracking.</p>
+                        <p>• Reduced CPA by 25% for largest e-commerce client in 3 months.</p>
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="relative pl-8">
+                    <span class="absolute -left-2 top-0 bg-slate-300 w-4 h-4 rounded-full border-2 border-white shadow"></span>
+                    <h3 class="text-lg font-bold text-slate-800">Senior Performance Tracking Analyst</h3>
+                    <p class="text-slate-500 font-medium text-sm mb-2">AMPH Advertising Agency | Aug 2019 - Jan 2022</p>
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-600 space-y-2">
+                        <p>• Monitored high-volume call traffic to identify conversion drivers.</p>
+                        <p>• Improved receptionist call handling efficiency by 18% through data insights.</p>
+                    </div>
+                </div>
+
+                <!-- Earlier Roles -->
+                <div class="relative pl-8">
+                    <span class="absolute -left-2 top-0 bg-slate-200 w-4 h-4 rounded-full border-2 border-white"></span>
+                    <h3 class="text-lg font-bold text-slate-600">Earlier Experience</h3>
+                    <div class="mt-2 space-y-4">
+                        <div>
+                            <p class="font-semibold text-slate-700 text-sm">Performance Tracking Analyst</p>
+                            <p class="text-xs text-slate-400">AMPH | Feb 2018 - July 2019</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-700 text-sm">Warehouse Admin</p>
+                            <p class="text-xs text-slate-400">Veracity Synergy Solutions | Aug 2017 - Jan 2018</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-700 text-sm">Admin Assistant / Credit Collections</p>
+                            <p class="text-xs text-slate-400">Admerex Solutions | June 2015 - July 2017</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Education -->
+                <div class="relative pl-8 pt-4">
+                     <span class="absolute -left-2 top-6 bg-blue-500 w-4 h-4 rounded-full border-2 border-white shadow"></span>
+                     <h3 class="text-lg font-bold text-slate-800">Education</h3>
+                     <p class="text-slate-600 text-sm">BS Information Technology</p>
+                     <p class="text-slate-500 text-xs">ICCT Colleges (Cainta Campus) | 2012–2015</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Navigation Logic ---
+        function navigate(viewId) {
+            // Update Menu UI
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active', 'bg-emerald-50', 'text-emerald-700', 'border-r-3', 'border-emerald-700');
+                btn.classList.add('text-slate-600');
+            });
+            const activeBtn = document.querySelector(`button[onclick="navigate('${viewId}')"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            // Show/Hide Sections
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+
+            // Trigger Charts if needed
+            if (viewId === 'experience' && experienceChart) {
+                experienceChart.resize(); // Ensure responsive resize on show
+            }
+        }
+
+        // --- Mobile Menu ---
+        const sidebar = document.getElementById('sidebar');
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        let isMenuOpen = false;
+
+        mobileBtn.addEventListener('click', () => {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                sidebar.classList.remove('-translate-x-full');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+
+        // --- Data Handling ---
+        
+        // 1. Overview Chart (Bar)
+        const ctxOverview = document.getElementById('overviewChart').getContext('2d');
+        new Chart(ctxOverview, {
+            type: 'bar',
+            data: {
+                labels: ['Lead Increase', 'Efficiency Gain', 'CPA Reduction'],
+                datasets: [{
+                    label: 'Peak Performance %',
+                    data: [45, 30, 25],
+                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 60 }
+                }
+            }
+        });
+
+        // 2. Experience Dynamic Chart
+        // Data Store based on Resume
+        const experienceData = {
+            manager: {
+                label: 'Performance Impact (Manager)',
+                data: [45, 30, 0], // Leads, Efficiency, Call Handling
+                labels: ['Lead Growth %', 'Budget Efficiency %', 'N/A'],
+                colors: ['#059669', '#34d399', '#e2e8f0'],
+                text: 'Spearheaded campaign optimization efforts driving a <span class="font-bold text-emerald-600">45% increase</span> in qualified leads and <span class="font-bold text-emerald-600">30% efficiency</span> improvement across 15 accounts.'
+            },
+            consultant: {
+                label: 'Performance Impact (Consultant)',
+                data: [0, 25, 0], 
+                labels: ['N/A', 'CPA Reduction %', 'N/A'],
+                colors: ['#e2e8f0', '#f59e0b', '#e2e8f0'],
+                text: 'Successfully reduced Cost Per Acquisition (CPA) by <span class="font-bold text-orange-500">25%</span> for the largest e-commerce client within the first three months through GTM/GA4 optimization.'
+            },
+            analyst: {
+                label: 'Performance Impact (Analyst)',
+                data: [0, 0, 18],
+                labels: ['N/A', 'N/A', 'Call Handling Efficiency %'],
+                colors: ['#e2e8f0', '#e2e8f0', '#3b82f6'],
+                text: 'Assessed receptionist performance and call behavior, providing data-driven insights that improved call handling efficiency by <span class="font-bold text-blue-500">18%</span>.'
+            }
+        };
+
+        let experienceChart = null;
+
+        function initExperienceChart() {
+            const ctxExp = document.getElementById('experienceChart').getContext('2d');
+            experienceChart = new Chart(ctxExp, {
+                type: 'bar',
+                data: {
+                    labels: experienceData.manager.labels,
+                    datasets: [{
+                        label: 'Improvement %',
+                        data: experienceData.manager.data,
+                        backgroundColor: experienceData.manager.colors,
+                        borderRadius: 8,
+                        barThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw > 0 ? `${context.raw}% Improvement` : 'Not applicable for this role';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 60, title: { display: true, text: 'Percentage Improvement' } }
+                    }
+                }
+            });
+        }
+
+        function updateExperienceChart(role) {
+            // Update UI buttons
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+                btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+            });
+            const clickedBtn = document.querySelector(`button[onclick="updateExperienceChart('${role}')"]`);
+            if(clickedBtn) {
+                clickedBtn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
+                clickedBtn.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+            }
+
+            // Update Text
+            const data = experienceData[role];
+            document.getElementById('detail-text').innerHTML = data.text;
+            document.getElementById('detail-title').innerText = role === 'manager' ? 'Primary Achievement' : 'Key Result';
+
+            // Update Chart
+            experienceChart.data.labels = data.labels;
+            experienceChart.data.datasets[0].data = data.data;
+            experienceChart.data.datasets[0].backgroundColor = data.colors;
+            experienceChart.update();
+        }
+
+        // 3. Skills Doughnut Chart
+        const ctxSkills = document.getElementById('skillsChart').getContext('2d');
+        new Chart(ctxSkills, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ad Platforms (Google/Meta)', 'Analytics & Tracking (GTM/GA4)', 'Strategy & Mgmt'],
+                datasets: [{
+                    data: [45, 30, 25], // Estimated distribution based on resume density
+                    backgroundColor: ['#3b82f6', '#f97316', '#a855f7'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Initialize
+        initExperienceChart();
+
+    </script>
+</body>
+</html>
